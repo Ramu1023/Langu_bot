@@ -2,19 +2,18 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Communication Trainer - Voice MVP</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI Communication Trainer</title>
     <style>
         :root {
             --primary: #4A90E2;
             --bg-color: #f4f7f6;
             --text-main: #333;
             --header-height: 60px;
-            --footer-height: 60px;
+            --footer-height: 65px;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-
         body { background-color: var(--bg-color); color: var(--text-main); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 
         /* Global Header */
@@ -27,54 +26,58 @@
         .page { display: none; flex: 1; }
         .page.active { display: flex; flex-direction: column; }
 
+        /* Status Bar */
+        #ai-status { text-align: center; font-size: 0.85rem; color: #e67e22; margin-bottom: 10px; font-weight: bold; background: #fff3cd; padding: 8px; border-radius: 5px; z-index: 999;}
+
         /* Onboarding */
         #onboarding-view { background: white; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 2000; padding: 40px 20px; overflow-y: auto; }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 1rem;}
         .btn-primary { background: var(--primary); color: white; border: none; padding: 12px; width: 100%; border-radius: 5px; font-size: 1.1rem; cursor: pointer; margin-top: 10px; }
+        .btn-primary:disabled { background: #95a5a6; cursor: not-allowed; }
 
         /* Home Page (Voice Interface) */
         .trainer-container { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; flex: 1; text-align: center; padding-top: 20px; }
-        .ai-avatar { width: 150px; height: 150px; border-radius: 50%; background: #dfe6e9; display: flex; align-items: center; justify-content: center; font-size: 4rem; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: transform 0.3s ease; }
+        .ai-avatar { width: 140px; height: 140px; border-radius: 50%; background: #dfe6e9; display: flex; align-items: center; justify-content: center; font-size: 4rem; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: transform 0.3s ease; }
         .ai-avatar.speaking { animation: pulse-avatar 1s infinite alternate; box-shadow: 0 0 20px var(--primary); }
-        
-        @keyframes pulse-avatar {
-            0% { transform: scale(1); }
-            100% { transform: scale(1.05); }
-        }
+        @keyframes pulse-avatar { 0% { transform: scale(1); } 100% { transform: scale(1.05); } }
 
-        .voice-status { margin-top: 10px; font-size: 0.9rem; color: #7f8c8d; min-height: 20px; }
-        .live-transcript { margin-top: 20px; padding: 15px; background: white; border-radius: 10px; width: 100%; max-width: 400px; min-height: 80px; box-shadow: inset 0 2px 5px rgba(0,0,0,0.05); font-style: italic; color: #555; }
+        .voice-status { font-size: 0.9rem; color: #7f8c8d; min-height: 20px; margin-bottom: 15px; }
+        .live-transcript { padding: 15px; background: white; border-radius: 10px; width: 100%; max-width: 400px; min-height: 80px; box-shadow: inset 0 2px 5px rgba(0,0,0,0.05); font-style: italic; color: #555; display: flex; flex-direction: column; justify-content: center; align-items: center; }
 
-        .mic-btn { margin-top: 30px; width: 80px; height: 80px; border-radius: 50%; background: #e74c3c; color: white; border: none; font-size: 2rem; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 10px rgba(231, 76, 60, 0.4); transition: all 0.3s ease; }
+        .mic-btn { margin-top: auto; margin-bottom: 20px; width: 70px; height: 70px; border-radius: 50%; background: #e74c3c; color: white; border: none; font-size: 1.8rem; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 10px rgba(231, 76, 60, 0.4); transition: all 0.3s ease; }
         .mic-btn.listening { background: #c0392b; animation: pulse-mic 1.5s infinite; }
-        .mic-btn:disabled { background: #95a5a6; cursor: not-allowed; animation: none; box-shadow: none; }
+        .mic-btn:disabled { background: #95a5a6; cursor: not-allowed; box-shadow: none; }
+        @keyframes pulse-mic { 0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(231, 76, 60, 0); } 100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); } }
 
-        @keyframes pulse-mic {
-            0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); }
-            70% { box-shadow: 0 0 0 20px rgba(231, 76, 60, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
-        }
+        /* Chat Page (Text Interface) */
+        .chat-box { flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding-bottom: 10px; }
+        .message { max-width: 85%; padding: 12px 16px; border-radius: 18px; margin-bottom: 10px; line-height: 1.4; word-wrap: break-word; font-size: 0.95rem; }
+        .msg-user { background: var(--primary); color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
+        .msg-ai { background: #e5e5ea; color: black; align-self: flex-start; border-bottom-left-radius: 2px; }
+        
+        .chat-input-area { display: flex; gap: 10px; padding-top: 10px; border-top: 1px solid #ccc; background: var(--bg-color); }
+        .chat-input-area input { flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 25px; outline: none; font-size: 1rem;}
+        .send-btn { background: var(--primary); color: white; border: none; border-radius: 25px; padding: 0 20px; font-weight: bold; cursor: pointer; }
+        .send-btn:disabled { background: #95a5a6; }
 
-        /* Status Bar */
-        #ai-status { text-align: center; font-size: 0.85rem; color: #e67e22; margin-bottom: 10px; font-weight: bold; background: #fff3cd; padding: 5px; border-radius: 5px;}
-
-        /* Footer */
-        footer { height: var(--footer-height); background: white; display: flex; justify-content: space-around; align-items: center; position: fixed; bottom: 0; width: 100%; box-shadow: 0 -2px 5px rgba(0,0,0,0.05); z-index: 1000; }
-        .nav-btn { background: none; border: none; color: #7f8c8d; font-size: 0.9rem; display: flex; flex-direction: column; align-items: center; cursor: pointer; flex: 1; padding: 10px 0; }
+        /* Footer Navigation */
+        footer { height: var(--footer-height); background: white; display: flex; justify-content: space-around; align-items: center; position: fixed; bottom: 0; width: 100%; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
+        .nav-btn { background: none; border: none; color: #7f8c8d; font-size: 0.8rem; display: flex; flex-direction: column; align-items: center; cursor: pointer; flex: 1; padding: 8px 0; }
         .nav-btn.active { color: var(--primary); font-weight: bold; }
-        .nav-icon { font-size: 1.2rem; margin-bottom: 3px; }
-        .center-content { display: flex; align-items: center; justify-content: center; height: 100%; font-size: 1.5rem; color: #7f8c8d; }
+        .nav-icon { font-size: 1.4rem; margin-bottom: 2px; }
+        
+        .center-content { display: flex; align-items: center; justify-content: center; height: 100%; font-size: 1.2rem; color: #7f8c8d; text-align: center; padding: 20px;}
     </style>
 </head>
 <body>
 
     <div id="onboarding-view">
-        <h2 style="text-align: center; color: var(--primary); margin-bottom: 20px;">Setup Voice Trainer</h2>
+        <h2 style="text-align: center; color: var(--primary); margin-bottom: 20px;">AI Communication Trainer</h2>
         <div class="form-group"><label>Name</label><input type="text" id="setup-name" placeholder="Enter your name" required></div>
         <div class="form-group"><label>Native Language</label>
-            <select id="setup-native"><option value="English">English</option><option value="Hindi">Hindi</option></select>
+            <select id="setup-native"><option value="English">English</option><option value="Hindi">Hindi</option><option value="Tamil">Tamil</option><option value="Telugu">Telugu</option></select>
         </div>
         <div class="form-group"><label>Language to Learn</label>
             <select id="setup-learning"><option value="English">English</option></select>
@@ -82,16 +85,16 @@
         <div class="form-group"><label>Select AI Trainer</label>
             <select id="setup-trainer"><option value="Female">Female Voice</option><option value="Male">Male Voice</option></select>
         </div>
-        <button class="btn-primary" onclick="completeSetup()">Start Learning</button>
+        <button class="btn-primary" onclick="completeSetup()">Start Offline Learning</button>
     </div>
 
     <header>
         <h1>AI Comm Trainer</h1>
-        <button class="login-btn" onclick="alert('Login – Coming Soon')">Login</button>
+        <button class="login-btn" onclick="alert('Offline Mode Active. Cloud Login Coming Soon.')">Login</button>
     </header>
 
     <main>
-        <div id="ai-status">⚙️ Initializing Local AI Engine... (May take a moment)</div>
+        <div id="ai-status">⚙️ Booting Local AI Engine... (May take a moment)</div>
 
         <div id="home" class="page active">
             <div class="trainer-container">
@@ -100,21 +103,46 @@
                 <div class="voice-status" id="voice-status-text">Tap the microphone to speak.</div>
                 
                 <div class="live-transcript" id="live-transcript">
-                    "AI response will appear here..."
+                    <span>Ready for your voice.</span>
                 </div>
 
                 <button class="mic-btn" id="mic-btn" onclick="toggleMicrophone()" disabled>🎤</button>
             </div>
         </div>
 
-        <div id="chat" class="page"><div class="center-content">Text Chat moved to background. Use Home for Voice.</div></div>
-        <div id="profile" class="page"><div class="center-content">Profile Settings</div></div>
-        <div id="test" class="page"><div class="center-content">Assessments Coming Soon</div></div>
+        <div id="chat" class="page">
+            <div class="chat-box" id="chat-history">
+                <div class="message msg-ai" id="initial-ai-msg">Hi! Let's practice reading and writing.</div>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="chat-input" placeholder="Type a message..." onkeypress="if(event.key === 'Enter') sendTextMessage()" disabled>
+                <button class="send-btn" id="send-btn" onclick="sendTextMessage()" disabled>Send</button>
+            </div>
+        </div>
+
+        <div id="profile" class="page">
+            <h2 style="border-bottom: 2px solid #ccc; padding-bottom: 5px; margin-bottom: 15px;">Settings</h2>
+            <div class="form-group"><label>Name</label><input type="text" id="prof-name"></div>
+            <div class="form-group">
+                <label>Voice Gender</label>
+                <select id="prof-trainer">
+                    <option value="Female">Female</option>
+                    <option value="Male">Male</option>
+                </select>
+            </div>
+            <button class="btn-primary" onclick="saveProfile()">Save Offline Settings</button>
+        </div>
+
+        <div id="test" class="page">
+            <div class="center-content">
+                Language Assessments & Quizzes<br><br><span style="font-size: 0.9rem;">(Feature Placeholder)</span>
+            </div>
+        </div>
     </main>
 
     <footer>
-        <button class="nav-btn active" onclick="navigate('home', this)"><span class="nav-icon">🏠</span>Home</button>
-        <button class="nav-btn" onclick="navigate('chat', this)"><span class="nav-icon">💬</span>Logs</button>
+        <button class="nav-btn active" onclick="navigate('home', this)"><span class="nav-icon">🏠</span>Voice</button>
+        <button class="nav-btn" onclick="navigate('chat', this)"><span class="nav-icon">💬</span>Chat</button>
         <button class="nav-btn" onclick="navigate('profile', this)"><span class="nav-icon">👤</span>Profile</button>
         <button class="nav-btn" onclick="navigate('test', this)"><span class="nav-icon">🧪</span>Test</button>
     </footer>
@@ -122,12 +150,12 @@
     <script type="module">
         import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.16.0';
 
-        env.allowLocalModels = false;
+        env.allowLocalModels = false; // Forces it to use the web cache
         
-        let generator;
+        let generator = null;
         let userData = JSON.parse(localStorage.getItem('aiTrainerData')) || null;
         
-        // Voice Variables
+        // Voice State
         let recognition;
         let isListening = false;
         let synth = window.speechSynthesis;
@@ -145,7 +173,7 @@
 
         window.completeSetup = function() {
             userData = {
-                name: document.getElementById('setup-name').value || "User",
+                name: document.getElementById('setup-name').value || "Student",
                 trainer: document.getElementById('setup-trainer').value,
             };
             localStorage.setItem('aiTrainerData', JSON.stringify(userData));
@@ -158,6 +186,16 @@
         function applyUserData() {
             document.getElementById('home-greeting').innerText = `Hello, ${userData.name}!`;
             document.getElementById('home-avatar').innerText = userData.trainer === 'Female' ? '👩‍🏫' : '👨‍🏫';
+            document.getElementById('prof-name').value = userData.name;
+            document.getElementById('prof-trainer').value = userData.trainer;
+        }
+
+        window.saveProfile = function() {
+            userData.name = document.getElementById('prof-name').value;
+            userData.trainer = document.getElementById('prof-trainer').value;
+            localStorage.setItem('aiTrainerData', JSON.stringify(userData));
+            applyUserData();
+            alert("Settings Saved Locally!");
         }
 
         window.navigate = function(pageId, btnElement) {
@@ -165,75 +203,123 @@
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(pageId).classList.add('active');
             btnElement.classList.add('active');
+            // Auto-scroll chat to bottom if opening chat
+            if(pageId === 'chat') {
+                const history = document.getElementById('chat-history');
+                history.scrollTop = history.scrollHeight;
+            }
         }
 
         // --- LOCAL AI ENGINE ---
         async function initLocalAI() {
             const statusDiv = document.getElementById('ai-status');
-            const micBtn = document.getElementById('mic-btn');
-
             try {
-                statusDiv.innerText = "⏳ Loading Local AI Engine...";
+                // DialoGPT-micro is ~80MB, ideal for mobile browser caches
                 generator = await pipeline('text-generation', 'Xenova/DialoGPT-micro');
                 
-                statusDiv.innerText = "✅ Local AI Ready!";
-                statusDiv.style.color = "#27ae60";
+                statusDiv.innerText = "✅ Local AI Active (Offline Mode)";
                 statusDiv.style.background = "#d4edda";
-                micBtn.disabled = false; // Enable mic only when AI is ready
+                statusDiv.style.color = "#27ae60";
+                
+                // Enable inputs
+                document.getElementById('mic-btn').disabled = false;
+                document.getElementById('chat-input').disabled = false;
+                document.getElementById('send-btn').disabled = false;
                 
                 setTimeout(() => { statusDiv.style.display = 'none'; }, 3000);
             } catch (error) {
-                console.error("AI Init Error:", error);
-                statusDiv.innerText = "❌ Failed to load AI.";
+                statusDiv.innerText = "❌ AI Failed to load. Check console.";
+                statusDiv.style.background = "#f8d7da";
+                statusDiv.style.color = "#721c24";
             }
         }
 
-        // --- SPEECH RECOGNITION (STT) ---
+        // --- CORE AI PROCESSING ---
+        async function getAIResponse(text) {
+            if (!generator) return "I am still starting up, please wait.";
+            try {
+                const out = await generator(text, { max_new_tokens: 30, temperature: 0.7, repetition_penalty: 1.2, do_sample: true });
+                let aiResponse = out[0].generated_text.replace(text, "").trim();
+                return aiResponse ? aiResponse : "I understand. Keep going!";
+            } catch (err) {
+                return "My local neural network encountered an error.";
+            }
+        }
+
+        // --- TEXT CHAT LOGIC ---
+        window.sendTextMessage = async function() {
+            const inputField = document.getElementById('chat-input');
+            const text = inputField.value.trim();
+            if (!text) return;
+
+            addMessageToChat(text, 'msg-user');
+            inputField.value = '';
+            
+            const typingId = "typing-" + Date.now();
+            addMessageToChat("Typing...", 'msg-ai', typingId);
+
+            const response = await getAIResponse(text);
+            
+            document.getElementById(typingId).remove();
+            addMessageToChat(response, 'msg-ai');
+        }
+
+        function addMessageToChat(text, className, id = null) {
+            const history = document.getElementById('chat-history');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${className}`;
+            msgDiv.innerText = text;
+            if(id) msgDiv.id = id;
+            history.appendChild(msgDiv);
+            history.scrollTop = history.scrollHeight;
+        }
+
+        // --- VOICE LOGIC (Web Speech API) ---
         function setupVoiceRecognition() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) {
-                document.getElementById('voice-status-text').innerText = "Speech recognition not supported in this browser.";
+                document.getElementById('voice-status-text').innerText = "Voice not supported in this browser.";
                 return;
             }
 
             recognition = new SpeechRecognition();
-            recognition.continuous = false; // Stop after one sentence
+            recognition.continuous = false;
             recognition.interimResults = false;
             recognition.lang = 'en-US';
 
-            recognition.onstart = function() {
+            recognition.onstart = () => {
                 isListening = true;
                 document.getElementById('mic-btn').classList.add('listening');
                 document.getElementById('voice-status-text').innerText = "Listening...";
-                document.getElementById('live-transcript').innerText = "Waiting for you to speak...";
+                document.getElementById('live-transcript').innerHTML = "<span>Waiting for you to speak...</span>";
             };
 
-            recognition.onresult = async function(event) {
+            recognition.onresult = async (event) => {
                 const userSpeech = event.results[0][0].transcript;
-                document.getElementById('live-transcript').innerText = `You: "${userSpeech}"`;
-                document.getElementById('voice-status-text').innerText = "Processing local AI response...";
+                document.getElementById('live-transcript').innerHTML = `<strong>You:</strong> ${userSpeech}`;
+                document.getElementById('voice-status-text').innerText = "Processing AI response...";
                 
-                // Pass to local AI
-                await processAIResponse(userSpeech);
+                // Mirror to text chat for history
+                addMessageToChat(userSpeech, 'msg-user');
+
+                document.getElementById('mic-btn').disabled = true;
+                const aiResponseText = await getAIResponse(userSpeech);
+                
+                // Mirror to text chat
+                addMessageToChat(aiResponseText, 'msg-ai');
+                
+                document.getElementById('live-transcript').innerHTML += `<br><br><strong>AI:</strong> ${aiResponseText}`;
+                speakResponse(aiResponseText);
             };
 
-            recognition.onerror = function(event) {
-                console.error("Speech Recognition Error", event.error);
-                document.getElementById('voice-status-text').innerText = "Error recognizing speech. Tap to try again.";
-                stopListening();
-            };
-
-            recognition.onend = function() {
-                stopListening();
-            };
+            recognition.onerror = () => stopListening();
+            recognition.onend = () => stopListening();
         }
 
         window.toggleMicrophone = function() {
-            if (isListening) {
-                recognition.stop();
-            } else {
-                // Cancel any ongoing AI speech before listening
-                synth.cancel();
+            if (isListening) recognition.stop();
+            else {
+                synth.cancel(); // Stop talking before listening
                 document.getElementById('home-avatar').classList.remove('speaking');
                 recognition.start();
             }
@@ -247,73 +333,31 @@
             }
         }
 
-        // --- PROCESS & SPEAK (TTS) ---
-        async function processAIResponse(text) {
-            if (!generator) return;
-            document.getElementById('mic-btn').disabled = true; // disable mic while thinking/speaking
-
-            try {
-                const out = await generator(text, {
-                    max_new_tokens: 30,
-                    temperature: 0.7,
-                    repetition_penalty: 1.2,
-                    do_sample: true
-                });
-                
-                let aiResponse = out[0].generated_text.replace(text, "").trim();
-                if(!aiResponse) aiResponse = "I hear you, keep practicing!";
-                
-                document.getElementById('live-transcript').innerText = `AI: "${aiResponse}"`;
-                speakResponse(aiResponse);
-            } catch (err) {
-                document.getElementById('live-transcript').innerText = "⚠️ Error generating response.";
-                document.getElementById('mic-btn').disabled = false;
-            }
-        }
-
         function speakResponse(text) {
-            if (synth.speaking) {
-                console.error('Speech synthesis already in progress.');
-                return;
-            }
-
             const utterThis = new SpeechSynthesisUtterance(text);
-            
-            // Try to set voice based on gender preference
             const voices = synth.getVoices();
             let selectedVoice = null;
             
             if (voices.length > 0) {
-                if (userData.trainer === 'Female') {
-                    selectedVoice = voices.find(v => v.name.includes('Female') || v.name.includes('Samantha') || v.name.includes('Google US English'));
-                } else {
-                    selectedVoice = voices.find(v => v.name.includes('Male') || v.name.includes('Alex') || v.name.includes('Daniel'));
-                }
+                selectedVoice = voices.find(v => userData.trainer === 'Female' 
+                    ? (v.name.includes('Female') || v.name.includes('Samantha') || v.name.includes('Google US English'))
+                    : (v.name.includes('Male') || v.name.includes('Alex') || v.name.includes('Daniel')));
             }
             if (selectedVoice) utterThis.voice = selectedVoice;
-            
-            utterThis.rate = 1.0;
 
-            utterThis.onstart = function() {
+            utterThis.onstart = () => {
                 document.getElementById('home-avatar').classList.add('speaking');
                 document.getElementById('voice-status-text').innerText = "AI is speaking...";
             }
-
-            utterThis.onend = function() {
+            utterThis.onend = utterThis.onerror = () => {
                 document.getElementById('home-avatar').classList.remove('speaking');
                 document.getElementById('voice-status-text').innerText = "Tap the microphone to speak.";
-                document.getElementById('mic-btn').disabled = false; // re-enable mic
-            }
-
-            utterThis.onerror = function(event) {
-                document.getElementById('home-avatar').classList.remove('speaking');
                 document.getElementById('mic-btn').disabled = false;
             }
-
             synth.speak(utterThis);
         }
-
-        // Ensure voices load
+        
+        // Handle dynamic voice loading
         if (speechSynthesis.onvoiceschanged !== undefined) {
             speechSynthesis.onvoiceschanged = () => synth.getVoices();
         }
